@@ -122,6 +122,22 @@ LINECOMMENT { /* no hace nada, los comentarios no se tokenizan */ }
 {NEW}     { return NEW; }
 {OF}      { return OF; }
 {NOT}     { return NOT; }
+"("         { return '('; }
+")"         { return ')'; }
+"{"         { return '{'; }
+"}"         { return '}'; }
+":"         { return ':'; }
+";"         { return ';'; }
+","         { return ','; }
+"."         { return '.'; }
+"@"         { return '@'; }
+"~"         { return '~'; }
+"+"         { return '+'; }
+"-"         { return '-'; }
+"*"         { return '*'; }
+"/"         { return '/'; }
+"="         { return '='; }
+"<"         { return '<'; }
 
 
 
