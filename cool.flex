@@ -43,13 +43,13 @@ extern YYSTYPE cool_yylval;
  *  Add Your own definitions here
  */
 
+
 %}
 
 /*
  * Define names for regular expressions here.
  */
 
-LINECOMMENT     --.*
 SIMPLESTRING    \".*\"
 DARROW          =>
 LARROW          <-
@@ -73,9 +73,14 @@ TRUE            t[rR][uU][eE]
 FALSE           f[aA][lL][sS][eE]
 ISVOID          [iI][sS][vV][oO][iI][dD]           
 DIGIT      [0-9]
+INT_CONST	{DIGIT}+
 LETTER     [a-zA-Z]
 WS         [ \t\r]+
 LE          <=
+
+
+%x COMMENT
+%x LINECOMMENT
 
 %%
 
@@ -83,8 +88,22 @@ LE          <=
   *  Nested comments
   */
 
-LINECOMMENT { /* no hace nada, los comentarios no se tokenizan */ }
+"--".*	BEGIN(LINECOMMENT);
 
+<LINECOMMENT>\n {
+	++curr_lineno;
+	BEGIN(0);
+}
+
+"(*"	BEGIN(COMMENT);
+
+<COMMENT>[^*\n]*	
+
+<COMMENT>"*"+[^*)\n]* 
+
+<COMMENT>\n	++curr_lineno;
+
+<COMMENT>"*"+")"\n BEGIN(0);
 
 
  /*
@@ -125,7 +144,7 @@ LINECOMMENT { /* no hace nada, los comentarios no se tokenizan */ }
 
 
 
-{DIGIT}+ {
+{INT_CONST} {
     cool_yylval.symbol = inttable.add_string(yytext);
     return INT_CONST;
 }
@@ -137,6 +156,7 @@ LINECOMMENT { /* no hace nada, los comentarios no se tokenizan */ }
     cool_yylval.symbol = idtable.add_string(yytext);
     return OBJECTID;
 }
+
 
 
  /*
