@@ -75,7 +75,7 @@ ISVOID          [iI][sS][vV][oO][iI][dD]
 DIGIT      [0-9]
 INT_CONST	{DIGIT}+
 LETTER     [a-zA-Z]
-WS         [ \t\r]+
+WS         [ \t\v\f\r]+
 LE          <=
 
 
@@ -90,7 +90,7 @@ LE          <=
 
 "--".*	BEGIN(LINECOMMENT);
 
-<LINECOMMENT>\n {
+<LINECOMMENT>[\n\f\r\c\v] {
 	++curr_lineno;
 	BEGIN(0);
 }
@@ -101,9 +101,14 @@ LE          <=
 
 <COMMENT>"*"+[^*)\n]* 
 
-<COMMENT>\n	++curr_lineno;
+<COMMENT>[\n\f\r\c\v]	{++curr_lineno;}
 
-<COMMENT>"*"+")"\n BEGIN(0);
+<COMMENT>"*"+")"\n {
+	++curr_lineno;
+	BEGIN(0);
+}
+
+<COMMENT>"*"+")"[ \t]* BEGIN(0);
 
 
  /*
@@ -141,6 +146,22 @@ LE          <=
 {NEW}     { return NEW; }
 {OF}      { return OF; }
 {NOT}     { return NOT; }
+"("         { return '('; }
+")"         { return ')'; }
+"{"         { return '{'; }
+"}"         { return '}'; }
+":"         { return ':'; }
+";"         { return ';'; }
+","         { return ','; }
+"."         { return '.'; }
+"@"         { return '@'; }
+"~"         { return '~'; }
+"+"         { return '+'; }
+"-"         { return '-'; }
+"*"         { return '*'; }
+"/"         { return '/'; }
+"="         { return '=';}
+"<"		{ return '<';}
 
 
 
@@ -157,7 +178,9 @@ LE          <=
     return OBJECTID;
 }
 
+[\n\f\r\c\v]	++curr_lineno;
 
+[ \t]+ 
 
  /*
   *  String constants (C syntax)
@@ -165,7 +188,6 @@ LE          <=
   *  \n \t \b \f, the result is c.
   *
   */
-
 
 
 
