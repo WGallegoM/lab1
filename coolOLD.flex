@@ -100,25 +100,19 @@ ERROR	.
 "(*"	{nested_level = 1;
         BEGIN(COMMENT);}
 
-<COMMENT>"(*" {
-    ++nested_level;
-}   
-
 <COMMENT>"*)" {
-    --nested_level;
-    if (nested_level < 0) {
+    --comment_depth;
+    if (comment_depth < 0) {
         cool_yylval.error_msg = "Unmatched *)";
         BEGIN(INITIAL);
         return ERROR;
     }
-    if (nested_level == 0) {
+    if (comment_depth == 0) {
         BEGIN(INITIAL);
     }
 }
 
-<COMMENT>[^()*\n]+
-
-<COMMENT>"(" 
+<COMMENT>"("
 
 <COMMENT>")" 
 
@@ -137,6 +131,7 @@ ERROR	.
 	cool_yylval.error_msg = "Unmatched *)";
 	return ERROR;
 }
+
 
 \"	{
 	BEGIN(STRING);
@@ -209,7 +204,12 @@ ERROR	.
     *string_buf_ptr++ = yytext[1];
 }
 
-
+<STRING>\" {
+    *string_buf_ptr = '\0';
+    cool_yylval.symbol = stringtable.add_string(string_buf);
+    BEGIN(INITIAL);
+    return STR_CONST;
+}
 
 
 <STRING>\n {
@@ -219,18 +219,10 @@ ERROR	.
     return ERROR;
 }
 
-<STRING>\\0 {
+<STRING>\0 {
     cool_yylval.error_msg = "String contains null character";
     BEGIN(INITIAL);
     return ERROR;
-}
-
-
-<STRING>\" {
-    *string_buf_ptr = '\0';
-    cool_yylval.symbol = stringtable.add_string(string_buf);
-    BEGIN(INITIAL);
-    return STR_CONST;
 }
 
 <STRING><<EOF>> {
@@ -329,7 +321,6 @@ return ERROR;
 cool_yylval.error_msg = "%";
 return ERROR;
 }
-
 "^" {
 cool_yylval.error_msg = "^";
 return ERROR;
