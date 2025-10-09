@@ -77,7 +77,7 @@ INT_CONST	{DIGIT}+
 LETTER     [a-zA-Z]
 WS         [ \t\v\f\r]+
 LE          <=
-
+ERROR	.
 
 %x COMMENT
 %x LINECOMMENT
@@ -90,7 +90,7 @@ LE          <=
 
 "--".*	BEGIN(LINECOMMENT);
 
-<LINECOMMENT>[\n\f\r\c\v] {
+<LINECOMMENT>[\n\f\r\v] {
 	++curr_lineno;
 	BEGIN(0);
 }
@@ -101,7 +101,7 @@ LE          <=
 
 <COMMENT>"*"+[^*)\n]* 
 
-<COMMENT>[\n\f\r\c\v]	{++curr_lineno;}
+<COMMENT>[\n\f\r\v]	{++curr_lineno;}
 
 <COMMENT>"*"+")"\n {
 	++curr_lineno;
@@ -110,6 +110,10 @@ LE          <=
 
 <COMMENT>"*"+")"[ \t]* BEGIN(0);
 
+"*)"	{
+	cool_yylval.error_msg = "Unmatched *)";
+	return ERROR;
+}
 
  /*
   *  The multiple-character operators.
@@ -163,6 +167,75 @@ LE          <=
 "="         { return '=';}
 "<"		{ return '<';}
 
+"_"	{
+	cool_yylval.error_msg = "_";
+	return ERROR;
+}
+"&"	{
+cool_yylval.error_msg = "&";
+return ERROR;
+}
+"!" {
+cool_yylval.error_msg = "!";
+return ERROR;
+}
+"#" {
+cool_yylval.error_msg = "#";
+return ERROR;
+}
+"$" {
+cool_yylval.error_msg = "$";
+return ERROR;
+}
+
+"%" {
+cool_yylval.error_msg = "%";
+return ERROR;
+}
+"^" {
+cool_yylval.error_msg = "^";
+return ERROR;
+}
+
+"%" {
+cool_yylval.error_msg = "%";
+return ERROR;
+}
+
+"\\" {
+cool_yylval.error_msg = "\\";
+return ERROR;
+}
+
+">" {
+cool_yylval.error_msg = ">";
+return ERROR;
+}
+
+"?" {
+cool_yylval.error_msg = "?";
+return ERROR;
+}
+
+"`" {
+cool_yylval.error_msg = "`";
+return ERROR;
+}
+
+"[" {
+cool_yylval.error_msg = "[";
+return ERROR;
+}
+
+"]" {
+cool_yylval.error_msg = "]";
+return ERROR;
+}
+
+"|" {
+cool_yylval.error_msg = "|";
+return ERROR;
+}
 
 
 {INT_CONST} {
@@ -178,7 +251,7 @@ LE          <=
     return OBJECTID;
 }
 
-[\n\f\r\c\v]	++curr_lineno;
+[\n\f\r\v]	++curr_lineno;
 
 [ \t]+ 
 
