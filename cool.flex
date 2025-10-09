@@ -81,6 +81,7 @@ ERROR	.
 
 %x COMMENT
 %x LINECOMMENT
+%x STRING  
 
 %%
 
@@ -110,10 +111,128 @@ ERROR	.
 
 <COMMENT>"*"+")"[ \t]* BEGIN(0);
 
+<COMMENT><<EOF>>	{ 
+	cool_yylval.error_msg = "EOF in comment";
+	BEGIN(0);
+	return ERROR;
+}
+
+
 "*)"	{
 	cool_yylval.error_msg = "Unmatched *)";
 	return ERROR;
 }
+
+
+\"	{
+	BEGIN(STRING);
+	string_buf_ptr = string_buf;
+}
+
+<STRING>\\n   {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = '\n';
+}
+
+
+
+<STRING>\\t   {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = '\t';
+}
+
+<STRING>\\b   {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = '\b';
+}
+
+<STRING>\\f   {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = '\f';
+}
+
+<STRING>\\\"  {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = '\"';
+}
+
+<STRING>\\\\  {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = '\\';
+}
+
+<STRING>\\.   {
+    if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+        cool_yylval.error_msg = "String constant too long";
+        BEGIN(INITIAL);
+        return ERROR;
+    }
+    *string_buf_ptr++ = yytext[1];
+}
+
+<STRING>\" {
+    *string_buf_ptr = '\0';
+    cool_yylval.symbol = stringtable.add_string(string_buf);
+    BEGIN(INITIAL);
+    return STR_CONST;
+}
+
+
+<STRING>\n {
+    curr_lineno++;
+    cool_yylval.error_msg = "Unterminated string constant";
+    BEGIN(INITIAL);
+    return ERROR;
+}
+
+<STRING>\0 {
+    cool_yylval.error_msg = "String contains null character";
+    BEGIN(INITIAL);
+    return ERROR;
+}
+
+<STRING><<EOF>> {
+    cool_yylval.error_msg = "EOF in string constant";
+    BEGIN(0);
+    return ERROR;
+}
+
+<STRING>[^\\\"\n\0]+ {
+    char *p = yytext;
+    while (*p) {
+        if (string_buf_ptr - string_buf >= MAX_STR_CONST - 1) {
+            cool_yylval.error_msg = "String constant too long";
+            BEGIN(INITIAL);
+            return ERROR;
+        }
+        *string_buf_ptr++ = *p++;
+    }
+}
+
 
  /*
   *  The multiple-character operators.
